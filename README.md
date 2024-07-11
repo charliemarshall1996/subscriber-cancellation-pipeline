@@ -1,6 +1,6 @@
 # subscriber cancellation pipeline
 
-Creation of ETL pipeline to manage cancellations of subscribers for an online streaming service.
+Creation of ETL pipeline to manage cancellations of subscribers for an online education platform.
 
 ## Project Overview
 
