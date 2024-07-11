@@ -116,6 +116,17 @@ def join_dfs(students_df: pd.DataFrame, courses_df: pd.DataFrame, student_jobs_d
     final_df = students_df.merge(courses_df, left_on='current_career_path_id', right_on='career_path_id', how='left')
     return final_df.merge(student_jobs_df, on='job_id', how='left')
 
+def load(final_df: pd.DataFrame):
+
+    logger.info("Loading data to...")
+
+    con = sqlite3.connect('data/cademycode_cleansed.db')
+    final_df.to_sql('cademycode_aggregated', con, if_exists='replace', index=False)
+    final_df.to_csv('data/cademycode_aggregated.csv', index=False)
+
+    con.commit()
+    con.close()
+
 def main(db):
     logger.info("Running pipeline...")
     students_df, courses_df, student_jobs_df = retrieve_tables(db)
@@ -178,39 +189,42 @@ class TestManageStudentsDF(unittest.TestCase):
 
         pd.testing.assert_frame_equal(result, expected_result)
 
-    class TestManageCoursesDf(unittest.TestCase):
+class TestManageCoursesDf(unittest.TestCase):
 
-        def test_add_null_placeholder(self):
-            
-            # Test that the null placeholder is added
-            df = pd.DataFrame({
-                'career_path_id': [1, 2, 3],
-                'career_path_name': ['A', 'B', 'C'],
-                'hours_to_complete': [10, 20, 30]
-            })
-            expected_df = pd.DataFrame({
-                'career_path_id': [1, 2, 3, 0],
-                'career_path_name': ['A', 'B', 'C', 'not applicable'],
-                'hours_to_complete': [10, 20, 30, 0]
-            })
-            result_df = manage_courses_df(df)
-            self.assertTrue(result_df.equals(expected_df))
+    def test_add_null_placeholder(self):
+        
+        # Test that the null placeholder is added
+        df = pd.DataFrame({
+            'career_path_id': [1, 2, 3],
+            'career_path_name': ['A', 'B', 'C'],
+            'hours_to_complete': [10, 20, 30]
+        })
+        expected_df = pd.DataFrame({
+            'career_path_id': [1, 2, 3, 0],
+            'career_path_name': ['A', 'B', 'C', 'not applicable'],
+            'hours_to_complete': [10, 20, 30, 0]
+        })
+        result_df = manage_courses_df(df)
+        self.assertTrue(result_df.equals(expected_df))
 
-        def test_null_placeholder_is_last_row(self):
+    def test_null_placeholder_is_last_row(self):
 
-            # Test that the null placeholder is added 
-            # as the last row
-            df = pd.DataFrame({
-                'career_path_id': [1, 2, 3],
-                'career_path_name': ['A', 'B', 'C'],
-                'hours_to_complete': [10, 20, 30]
-            })
-            result_df = manage_courses_df(df)
-            self.assertEqual(result_df.iloc[-1].to_dict(), {
-                'career_path_id': 0,
-                'career_path_name': 'not applicable',
-                'hours_to_complete': 0
-            })
+        # Test that the null placeholder is added 
+        # as the last row
+        df = pd.DataFrame({
+            'career_path_id': [1, 2, 3],
+            'career_path_name': ['A', 'B', 'C'],
+            'hours_to_complete': [10, 20, 30]
+        })
+        result_df = manage_courses_df(df)
+        self.assertEqual(result_df.iloc[-1].to_dict(), {
+            'career_path_id': 0,
+            'career_path_name': 'not applicable',
+            'hours_to_complete': 0
+        })
 
 if __name__ == "__main__":
-    unittest.main()
+    # unittest.main()
+
+    db = './data/cademycode_updated.db'
+    main(db)
